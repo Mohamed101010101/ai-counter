@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="description" content="تطبيق عدّاد ذكي يعتمد على الذكاء الاصطناعي لعدّ الأشياء في الوقت الفعلي من كاميرا الهاتف">
+    <meta name="theme-color" content="#0a0a1a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>عدّاد الذكاء الاصطناعي | AI Counter</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/svg+xml" href="icon.svg">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Splash Screen -->
+    <div id="splash-screen" class="splash-screen">
+        <div class="splash-content">
+            <div class="splash-icon">
+                <svg width="80" height="80" viewBox="0 0 80 80" fill="none">
+                    <defs>
+                        <linearGradient id="splash-grad" x1="0" y1="0" x2="80" y2="80" gradientUnits="userSpaceOnUse">
+                            <stop stop-color="#6C5CE7"/>
+                            <stop offset="1" stop-color="#00D2FF"/>
+                        </linearGradient>
+                    </defs>
+                    <rect width="80" height="80" rx="20" fill="url(#splash-grad)" opacity="0.15"/>
+                    <path d="M24 28C24 25.8 25.8 24 28 24H52C54.2 24 56 25.8 56 28V52C56 54.2 54.2 56 52 56H28C25.8 56 24 54.2 24 52V28Z" stroke="url(#splash-grad)" stroke-width="2.5" fill="none"/>
+                    <circle cx="32" cy="32" r="3" fill="#6C5CE7"/>
+                    <circle cx="40" cy="40" r="4" fill="#00D2FF"/>
+                    <circle cx="48" cy="34" r="2.5" fill="#A29BFE"/>
+                    <path d="M30 48L36 42L40 46L48 36" stroke="#00D2FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </div>
+            <h1 class="splash-title">AI Counter</h1>
+            <p class="splash-subtitle">عدّاد الذكاء الاصطناعي</p>
+            <div class="splash-loader">
+                <div class="splash-progress">
+                    <div class="splash-progress-bar" id="splash-progress-bar"></div>
+                </div>
+                <p class="splash-status" id="splash-status">جاري تحميل النموذج...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main App -->
+    <div id="app" class="app hidden">
+        <!-- Camera View -->
+        <div class="camera-container" id="camera-container">
+            <video id="camera-feed" autoplay playsinline muted></video>
+            <canvas id="detection-canvas"></canvas>
+            
+            <!-- Top Bar -->
+            <div class="top-bar">
+                <div class="top-bar-left">
+                    <button class="icon-btn" id="btn-switch-camera" title="تبديل الكاميرا">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M11 19H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h5"/>
+                            <path d="M13 5h7a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-5"/>
+                            <circle cx="12" cy="12" r="3"/>
+                            <path d="m18 22-3-3 3-3"/>
+                            <path d="m6 2 3 3-3 3"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="top-bar-center">
+                    <div class="fps-badge" id="fps-badge">
+                        <span class="fps-dot"></span>
+                        <span id="fps-value">0</span> FPS
+                    </div>
+                </div>
+                <div class="top-bar-right">
+                    <button class="icon-btn" id="btn-settings" title="الإعدادات">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="3"/>
+                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Count Display Overlay -->
+            <div class="count-overlay" id="count-overlay">
+                <div class="count-main">
+                    <span class="count-number" id="main-count">0</span>
+                    <span class="count-label" id="main-count-label">لم يتم التحديد</span>
+                </div>
+            </div>
+
+            <!-- Detection Stats Bar -->
+            <div class="stats-bar" id="stats-bar">
+                <!-- Dynamically populated -->
+            </div>
+
+            <!-- Bottom Controls -->
+            <div class="bottom-controls">
+                <button class="control-btn" id="btn-capture" title="التقاط صورة">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"/>
+                        <circle cx="12" cy="12" r="4" fill="currentColor"/>
+                    </svg>
+                </button>
+                <button class="control-btn primary" id="btn-select-objects" title="اختر الأشياء للعدّ">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="7" height="7" rx="1"/>
+                        <rect x="14" y="3" width="7" height="7" rx="1"/>
+                        <rect x="3" y="14" width="7" height="7" rx="1"/>
+                        <path d="M17.5 14v7M14 17.5h7"/>
+                    </svg>
+                    <span class="btn-label">اختر ما تعدّه</span>
+                </button>
+                <button class="control-btn" id="btn-pause" title="إيقاف مؤقت">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="6" y="4" width="4" height="16" rx="1"/>
+                        <rect x="14" y="4" width="4" height="16" rx="1"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Object Selection Panel -->
+        <div class="panel-overlay hidden" id="panel-overlay"></div>
+        <div class="selection-panel hidden" id="selection-panel">
+            <div class="panel-header">
+                <h2>اختر الأشياء للعدّ</h2>
+                <button class="panel-close" id="btn-close-panel">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                        <path d="M18 6L6 18M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="panel-search">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                    <circle cx="11" cy="11" r="8"/>
+                    <path d="m21 21-4.35-4.35"/>
+                </svg>
+                <input type="text" id="search-objects" placeholder="ابحث عن شيء..." autocomplete="off">
+            </div>
+            <div class="panel-actions">
+                <button class="chip-btn active" id="btn-select-all">تحديد الكل</button>
+                <button class="chip-btn" id="btn-deselect-all">إلغاء الكل</button>
+            </div>
+            <div class="objects-grid" id="objects-grid">
+                <!-- Dynamically populated -->
+            </div>
+            <div class="panel-footer">
+                <button class="btn-apply" id="btn-apply-selection">
+                    تطبيق
+                    <span class="selection-count" id="selection-count">0</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Settings Panel -->
+        <div class="settings-panel hidden" id="settings-panel">
+            <div class="panel-header">
+                <h2>الإعدادات</h2>
+                <button class="panel-close" id="btn-close-settings">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                        <path d="M18 6L6 18M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="settings-body">
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <span class="setting-label">حد الثقة</span>
+                        <span class="setting-value" id="confidence-value">50%</span>
+                    </div>
+                    <input type="range" class="setting-slider" id="confidence-slider" min="10" max="95" value="50">
+                    <p class="setting-desc">كلما زادت النسبة، زادت دقة الكشف وقلّ عدد النتائج الخاطئة</p>
+                </div>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <span class="setting-label">إظهار مربعات الكشف</span>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="toggle-boxes" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <span class="setting-label">إظهار التسميات</span>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="toggle-labels" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <span class="setting-label">الصوت عند الكشف</span>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="toggle-sound">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <span class="setting-label">اهتزاز عند الكشف</span>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="toggle-vibrate" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Capture Preview -->
+        <div class="capture-preview hidden" id="capture-preview">
+            <div class="capture-header">
+                <button class="icon-btn" id="btn-close-capture">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                        <path d="M18 6L6 18M6 6l12 12"/>
+                    </svg>
+                </button>
+                <span>الصورة الملتقطة</span>
+                <button class="icon-btn" id="btn-download-capture">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="7,10 12,15 17,10"/>
+                        <line x1="12" y1="15" x2="12" y2="3"/>
+                    </svg>
+                </button>
+            </div>
+            <canvas id="capture-canvas"></canvas>
+            <div class="capture-info" id="capture-info"></div>
+        </div>
+
+        <!-- Toast Notifications -->
+        <div class="toast-container" id="toast-container"></div>
+    </div>
+
+    <!-- TensorFlow.js & COCO-SSD -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.17.0/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.3/dist/coco-ssd.min.js"></script>
+    <script src="app.js"></script>
+    <script>
+        // Register Service Worker for PWA / offline support
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(reg => console.log('[PWA] Service Worker registered:', reg.scope))
+                    .catch(err => console.warn('[PWA] SW registration failed:', err));
+            });
+        }
+    </script>
+</body>
+</html>
