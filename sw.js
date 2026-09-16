@@ -1,9 +1,10 @@
 // ============================================
 // AI Counter — Service Worker
 // Enables offline capability & PWA installability
+// YOLO26n + ONNX Runtime Web
 // ============================================
 
-const CACHE_NAME = 'ai-counter-v1';
+const CACHE_NAME = 'ai-counter-v2';
 const ASSETS_TO_CACHE = [
     './',
     './index.html',
@@ -11,20 +12,16 @@ const ASSETS_TO_CACHE = [
     './app.js',
     './manifest.json',
     './icon.svg',
+    './yolo26n.onnx',
     'https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700;800&display=swap',
-];
-
-// TensorFlow.js & COCO-SSD CDN resources (cached on first use)
-const CDN_RESOURCES = [
-    'https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.17.0/dist/tf.min.js',
-    'https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.3/dist/coco-ssd.min.js',
+    'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.21.0/dist/ort.min.js',
 ];
 
 // Install: cache core assets
 self.addEventListener('install', (event) => {
     event.waitUntil(
         caches.open(CACHE_NAME).then((cache) => {
-            console.log('[SW] Caching core assets');
+            console.log('[SW] Caching core assets (including YOLO26n model)');
             return cache.addAll(ASSETS_TO_CACHE);
         })
     );
@@ -45,22 +42,18 @@ self.addEventListener('activate', (event) => {
     self.clients.claim();
 });
 
-// Fetch: network first, fallback to cache
+// Fetch: cache first for model and CDN, network first for app assets
 self.addEventListener('fetch', (event) => {
     const url = new URL(event.request.url);
 
-    // For CDN resources (TF.js, model weights): cache first strategy
-    if (url.hostname === 'cdn.jsdelivr.net' || 
-        url.hostname === 'storage.googleapis.com' ||
-        url.hostname === 'tfhub.dev' ||
-        url.pathname.includes('model.json') ||
-        url.pathname.includes('group1-shard')) {
+    // For ONNX model, CDN resources, and WASM files: cache first
+    if (url.pathname.endsWith('.onnx') ||
+        url.pathname.endsWith('.wasm') ||
+        url.hostname === 'cdn.jsdelivr.net') {
         event.respondWith(
             caches.open(CACHE_NAME).then((cache) => {
                 return cache.match(event.request).then((cachedResponse) => {
-                    if (cachedResponse) {
-                        return cachedResponse;
-                    }
+                    if (cachedResponse) return cachedResponse;
                     return fetch(event.request).then((networkResponse) => {
                         if (networkResponse.ok) {
                             cache.put(event.request, networkResponse.clone());
@@ -77,7 +70,6 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(
         fetch(event.request)
             .then((response) => {
-                // Cache successful responses
                 if (response.ok && event.request.method === 'GET') {
                     const responseClone = response.clone();
                     caches.open(CACHE_NAME).then((cache) => {
