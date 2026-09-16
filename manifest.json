@@ -2,7 +2,7 @@
     "name": "ai-counter",
     "short_name": "AI عدّاد",
     "description": "تطبيق عدّاد ذكي يعتمد على الذكاء الاصطناعي لعدّ الأشياء في الوقت الفعلي",
-    "start_url": "/",
+    "start_url": "./",
     "display": "standalone",
     "orientation": "portrait",
     "background_color": "#0a0a1a",
